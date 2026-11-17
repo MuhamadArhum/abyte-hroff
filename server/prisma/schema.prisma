@@ -1,0 +1,161 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+// Enums represented as strings for SQLite compatibility:
+// Gender: MALE, FEMALE, OTHER
+// MaritalStatus: SINGLE, MARRIED, DIVORCED, WIDOWED
+// JobType: PERMANENT, CONTRACT, TEMPORARY, INTERN
+// EmploymentStatus: ACTIVE, INACTIVE
+// ImageCategory: PROFILE, CNIC_FRONT, CNIC_BACK, FATHER, OTHER
+
+model User {
+  id           Int      @id @default(autoincrement())
+  username     String   @unique
+  passwordHash String
+  fullName     String?
+  role         String   @default("ADMIN") // ADMIN, MANAGER, HR, VIEWER, OTHER
+  isActive     Boolean  @default(true)
+  tokenVersion Int      @default(0)
+  mustChangePassword Boolean @default(false)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+}
+
+model Department {
+  id          Int        @id @default(autoincrement())
+  name        String     @unique
+  description String?
+  status      String     @default("ACTIVE")
+  employees   Employee[]
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+}
+
+model Designation {
+  id          Int        @id @default(autoincrement())
+  title       String     @unique
+  description String?
+  employees   Employee[]
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+}
+
+model Employee {
+  id                   Int               @id @default(autoincrement())
+  employeeCode         String            @unique
+  name                 String
+  fatherName           String?
+  cnic                 String?           @unique
+  cnicIssueDate        DateTime?
+  cnicExpiryDate       DateTime?
+  dateOfBirth          DateTime?
+  gender               String?
+  bloodGroup           String?
+  maritalStatus        String?
+  religion             String?
+  mobileNumber         String?
+  alternatePhone       String?
+  personalEmail        String?
+  address              String?
+  permanentAddress     String?
+  city                 String?
+  emergencyContact     String?
+  emergencyContactName String?
+  emergencyContactRelation String?
+  emergencyContactAddress String?
+  qualification        String?
+  skills               String?
+  departmentId         Int?
+  designationId        Int?
+  reportingManager     String?
+  shiftTimings         String?
+  jobType              String?
+  dateOfJoining        DateTime?
+  resignationDate      DateTime?
+  lastWorkingDate      DateTime?
+  salary               Float?
+  employmentStatus     String            @default("ACTIVE")
+  employeeCardNumber   String?
+  eobiNumber           String?
+  socialSecurityNumber String?
+  referenceName        String?
+  referenceContact     String?
+  referenceRelation    String?
+  notes                String?
+  department           Department?       @relation(fields: [departmentId], references: [id], onDelete: SetNull)
+  designation          Designation?      @relation(fields: [designationId], references: [id], onDelete: SetNull)
+  images               EmployeeImage[]
+  documents            EmployeeDocument[]
+  history              EmployeeHistory[]
+  createdAt            DateTime          @default(now())
+  updatedAt            DateTime          @updatedAt
+
+  @@index([name])
+  @@index([cnic])
+  @@index([departmentId])
+  @@index([designationId])
+  @@index([employmentStatus])
+  @@index([dateOfJoining])
+  @@index([jobType])
+  @@index([createdAt])
+  @@index([updatedAt])
+  @@index([mobileNumber])
+  @@index([personalEmail])
+}
+
+model EmployeeImage {
+  id               Int      @id @default(autoincrement())
+  employeeId       Int
+  imageCategory    String
+  originalFilename String
+  storedFilename   String
+  relativePath     String
+  fileExtension    String
+  fileSize         Int
+  uploadDate       DateTime @default(now())
+  employee         Employee @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+
+  @@index([employeeId, imageCategory])
+}
+
+model EmployeeDocument {
+  id               Int      @id @default(autoincrement())
+  employeeId       Int
+  originalFilename String
+  storedFilename   String
+  relativePath     String
+  fileExtension    String
+  fileSize         Int
+  uploadDate       DateTime @default(now())
+  employee         Employee @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+
+  @@index([employeeId])
+}
+
+model EmployeeHistory {
+  id                  Int      @id @default(autoincrement())
+  employeeId          Int
+  action              String
+  details             String?
+  performedByUserId   Int?
+  performedByUsername String?
+  createdAt           DateTime @default(now())
+  employee            Employee @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+
+  @@index([employeeId])
+}
+
+model BackupLog {
+  id        Int      @id @default(autoincrement())
+  type      String
+  filePath  String
+  status    String
+  message   String?
+  createdAt DateTime @default(now())
+}
